@@ -2,9 +2,11 @@ mod clipboard;
 mod files;
 mod input;
 mod keyboard;
+mod notifications;
 mod songs;
 
 use crate::keyboard::KeyActionType;
+use crate::notifications::send_notification;
 use crate::songs::SelectionType;
 use clap::{Parser, ValueHint};
 use rdev::Key;
@@ -12,11 +14,14 @@ use std::error::Error;
 use std::path::Path;
 use std::sync::{mpsc, Arc, Mutex};
 use std::thread;
+use std::time::Duration;
 
 const DEFAULT_SONGS_PATH: &str = "Songs";
 const TIMEOUT_IN_SECONDS: u64 = 7;
 const DEFAULT_SELECTION: bool = false;
 const PASTE_WAIT_TIME_IN_MILLIS: u64 = 50;
+const DEFAULT_NOTIFY: bool = true;
+const NOTIFY_TIMEOUT_IN_MILLIS: u64 = 2000;
 
 #[derive(Parser, Debug)]
 #[command(version, about, long_about = None)]
@@ -30,6 +35,9 @@ struct Args {
     /// Timeout for inactivity in seconds
     #[arg(short, default_value_t = TIMEOUT_IN_SECONDS )]
     timeout: u64,
+    /// Notify when program ends
+    #[arg(short, default_value_t = DEFAULT_NOTIFY )]
+    notify: bool,
 }
 
 fn main() -> Result<(), Box<dyn Error>> {
@@ -76,6 +84,13 @@ fn main() -> Result<(), Box<dyn Error>> {
 
             if elapsed > timeout_limit {
                 println!("долго думал");
+
+                if args.notify {
+                    let _ = send_notification(
+                        "Строчки таймаут",
+                        Duration::from_millis(NOTIFY_TIMEOUT_IN_MILLIS),
+                    );
+                }
                 std::process::exit(1);
             }
 
@@ -100,6 +115,13 @@ fn main() -> Result<(), Box<dyn Error>> {
     }
 
     control.stop();
+
+    if args.notify {
+        let _ = send_notification(
+            "Строчки всё!",
+            Duration::from_millis(NOTIFY_TIMEOUT_IN_MILLIS),
+        );
+    }
 
     println!("конец :)");
     Ok(())
