@@ -1,4 +1,5 @@
 mod clipboard;
+mod files;
 mod input;
 mod keyboard;
 mod songs;
