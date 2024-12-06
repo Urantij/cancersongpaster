@@ -32,12 +32,12 @@ pub fn get_selection<'a>(options: &'a Vec<&str>, lines: usize) -> Result<&'a str
 
         while let Some(line) = iter.next() {
             in_pipe
-                .write(line.as_bytes())
+                .write_all(line.as_bytes())
                 .map_err(|err| SelectionError::BadExecution { inner: err })?;
 
             if iter.peek().is_some() {
                 in_pipe
-                    .write("\n".as_bytes())
+                    .write_all("\n".as_bytes())
                     .map_err(|err| SelectionError::BadExecution { inner: err })?;
             }
         }

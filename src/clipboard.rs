@@ -14,7 +14,13 @@ fn paste_xclip(content: &str) -> Result<(), io::Error> {
         .stderr(Stdio::null())
         .spawn()?;
 
-    command.stdin.take().unwrap().write(content.as_bytes())?;
+    command
+        .stdin
+        .take()
+        .unwrap()
+        .write_all(content.as_bytes())?;
+
+    command.wait()?;
 
     Ok(())
 }
