@@ -62,7 +62,7 @@ fn main() -> Result<(), Box<dyn Error>> {
         }
     }
 
-    let mut lines = songs::read_song(song)?;
+    let lines = songs::read_song(song)?;
 
     if lines.len() == 0 {
         panic!("Пустой вектор строк");
