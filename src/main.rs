@@ -70,7 +70,9 @@ fn main() -> Result<(), Box<dyn Error>> {
 
     let (sender, receiver) = mpsc::channel();
 
-    let control = keyboard::ListenControl::create(sender, Key::KeyV, true, KeyActionType::Press);
+    // На Press плохо работает, иногда просто не вставляет строку в буфер обмена.
+    // Да и если подумать... оно и должно на релизе срабатывать, на пресс же сам пейст срабатывает, ептыть
+    let control = keyboard::ListenControl::create(sender, Key::KeyV, true, KeyActionType::Release);
 
     let last_activity = Arc::new(Mutex::new(std::time::Instant::now()));
 
@@ -91,6 +93,10 @@ fn main() -> Result<(), Box<dyn Error>> {
                         Duration::from_millis(NOTIFY_TIMEOUT_IN_MILLIS),
                     );
                 }
+
+                let _ = clipboard::paste_clipboard("");
+                // Если не подождать, оно не вставит строку в буфер обмена.
+                thread::sleep(std::time::Duration::from_millis(PASTE_WAIT_TIME_IN_MILLIS));
                 std::process::exit(1);
             }
 
@@ -98,15 +104,11 @@ fn main() -> Result<(), Box<dyn Error>> {
         }
     });
 
-    lines.push("".to_string());
-
-    let mut iter = lines.iter().peekable();
+    let mut iter = lines.iter();
 
     while let Some(line) = iter.next() {
         println!("пишем строку");
 
-        // если делать инпут на пресс кнопки, а не релиз, тут нужно подождать
-        thread::sleep(std::time::Duration::from_millis(PASTE_WAIT_TIME_IN_MILLIS));
         clipboard::paste_clipboard(line)?;
 
         receiver.recv()?;
@@ -115,6 +117,10 @@ fn main() -> Result<(), Box<dyn Error>> {
     }
 
     control.stop();
+
+    clipboard::paste_clipboard("")?;
+    // Если не подождать, оно не вставит строку в буфер обмена.
+    thread::sleep(std::time::Duration::from_millis(PASTE_WAIT_TIME_IN_MILLIS));
 
     if args.notify {
         let _ = send_notification(
