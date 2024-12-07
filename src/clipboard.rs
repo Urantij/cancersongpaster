@@ -12,12 +12,20 @@ impl ClipboardWrapper {
         }
     }
 
+    fn clear(&self) -> Result<(), arboard::Error> {
+        self.clipboard.lock().unwrap().clear()
+    }
+
     fn paste(&self, content: &str) -> Result<(), arboard::Error> {
         self.clipboard.lock().unwrap().set_text(content)
     }
 }
 
 static AR_WRAPPER: LazyLock<ClipboardWrapper> = LazyLock::new(|| ClipboardWrapper::new());
+
+pub fn clear_clipboard() -> Result<(), arboard::Error> {
+    AR_WRAPPER.clear()
+}
 
 pub fn paste_clipboard(content: &str) -> Result<(), arboard::Error> {
     // paste_xclip(content)

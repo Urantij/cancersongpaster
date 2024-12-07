@@ -94,7 +94,7 @@ fn main() -> Result<(), Box<dyn Error>> {
                     );
                 }
 
-                let _ = clipboard::paste_clipboard("");
+                let _ = clipboard::clear_clipboard();
                 // Если не подождать, оно не вставит строку в буфер обмена.
                 thread::sleep(std::time::Duration::from_millis(PASTE_WAIT_TIME_IN_MILLIS));
                 std::process::exit(1);
@@ -118,7 +118,7 @@ fn main() -> Result<(), Box<dyn Error>> {
 
     control.stop();
 
-    clipboard::paste_clipboard("")?;
+    clipboard::clear_clipboard()?;
     // Если не подождать, оно не вставит строку в буфер обмена.
     thread::sleep(std::time::Duration::from_millis(PASTE_WAIT_TIME_IN_MILLIS));
 
