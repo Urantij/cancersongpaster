@@ -7,4 +7,5 @@ edition = "2021"
 clap = { version = "4.5.22", features = ["derive"] }
 rand = "0.8.5"
 rdev = { version = "0.5.3", features = ["unstable_grab"] }
+single-instance = "0.3.3"
 thiserror = "2.0.4"

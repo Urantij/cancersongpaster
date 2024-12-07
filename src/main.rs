@@ -68,6 +68,21 @@ fn main() -> Result<(), Box<dyn Error>> {
         panic!("Пустой вектор строк");
     }
 
+    let single_instance = single_instance::SingleInstance::new("cancersongpaster")?;
+
+    if !single_instance.is_single() {
+        if args.notify {
+            let _ = send_notification(
+                "Строчки уже запущены",
+                Duration::from_millis(NOTIFY_TIMEOUT_IN_MILLIS),
+            );
+        }
+        drop(single_instance);
+        std::process::exit(2);
+    }
+
+    let mut single_instance = Arc::new(Mutex::new(Some(single_instance)));
+
     let (sender, receiver) = mpsc::channel();
 
     // На Press плохо работает, иногда просто не вставляет строку в буфер обмена.
@@ -77,6 +92,8 @@ fn main() -> Result<(), Box<dyn Error>> {
     let last_activity = Arc::new(Mutex::new(std::time::Instant::now()));
 
     let last_activity_intimer = last_activity.clone();
+
+    let single_instance_intimer = Arc::downgrade(&single_instance.clone());
 
     thread::spawn(move || {
         let timeout_limit = std::time::Duration::from_secs(args.timeout);
@@ -92,6 +109,12 @@ fn main() -> Result<(), Box<dyn Error>> {
                         "Строчки таймаут",
                         Duration::from_millis(NOTIFY_TIMEOUT_IN_MILLIS),
                     );
+                }
+
+                if let Some(instance) = single_instance_intimer.upgrade() {
+                    if let Some(instance) = instance.lock().unwrap().take() {
+                        drop(instance);
+                    }
                 }
 
                 let _ = clipboard::clear_clipboard();
@@ -117,6 +140,10 @@ fn main() -> Result<(), Box<dyn Error>> {
     }
 
     control.stop();
+
+    if let Some(instance) = single_instance.lock().unwrap().take() {
+        drop(instance);
+    }
 
     clipboard::clear_clipboard()?;
     // Если не подождать, оно не вставит строку в буфер обмена.
