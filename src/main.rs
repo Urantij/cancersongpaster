@@ -81,7 +81,7 @@ fn main() -> Result<(), Box<dyn Error>> {
         std::process::exit(2);
     }
 
-    let mut single_instance = Arc::new(Mutex::new(Some(single_instance)));
+    let single_instance = Arc::new(Mutex::new(Some(single_instance)));
 
     let (sender, receiver) = mpsc::channel();
 
@@ -93,10 +93,10 @@ fn main() -> Result<(), Box<dyn Error>> {
 
     let last_activity_intimer = last_activity.clone();
 
-    let single_instance_intimer = Arc::downgrade(&single_instance.clone());
+    let single_instance_intimer = single_instance.clone();
 
     thread::spawn(move || {
-        let timeout_limit = std::time::Duration::from_secs(args.timeout);
+        let timeout_limit = Duration::from_secs(args.timeout);
 
         loop {
             let elapsed = last_activity_intimer.lock().unwrap().elapsed();
@@ -111,19 +111,17 @@ fn main() -> Result<(), Box<dyn Error>> {
                     );
                 }
 
-                if let Some(instance) = single_instance_intimer.upgrade() {
-                    if let Some(instance) = instance.lock().unwrap().take() {
-                        drop(instance);
-                    }
+                if let Some(instance) = single_instance_intimer.lock().unwrap().take() {
+                    drop(instance);
                 }
 
                 let _ = clipboard::clear_clipboard();
                 // Если не подождать, оно не вставит строку в буфер обмена.
-                thread::sleep(std::time::Duration::from_millis(PASTE_WAIT_TIME_IN_MILLIS));
+                thread::sleep(Duration::from_millis(PASTE_WAIT_TIME_IN_MILLIS));
                 std::process::exit(1);
             }
 
-            thread::sleep(std::time::Duration::from_millis(100));
+            thread::sleep(Duration::from_millis(100));
         }
     });
 
@@ -147,7 +145,7 @@ fn main() -> Result<(), Box<dyn Error>> {
 
     clipboard::clear_clipboard()?;
     // Если не подождать, оно не вставит строку в буфер обмена.
-    thread::sleep(std::time::Duration::from_millis(PASTE_WAIT_TIME_IN_MILLIS));
+    thread::sleep(Duration::from_millis(PASTE_WAIT_TIME_IN_MILLIS));
 
     if args.notify {
         let _ = send_notification(
