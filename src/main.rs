@@ -12,7 +12,7 @@ use clap::{Parser, ValueHint};
 use rdev::Key;
 use std::error::Error;
 use std::path::Path;
-use std::sync::{mpsc, Arc, Mutex};
+use std::sync::{Arc, Mutex};
 use std::thread;
 use std::time::Duration;
 
@@ -130,9 +130,17 @@ fn main() -> Result<(), Box<dyn Error>> {
 
         clipboard::paste_clipboard(line)?;
 
+        // Пейст происходит, когда нажата v при зажатом ctrl
+        // Нужно менять буфер обмена, когда v отжата после пейста
+        let mut used_paste = false;
         loop {
             let event = control.receiver.recv()?;
-            if event.action_type == KeyActionType::Release && event.is_ctrl {
+
+            if event.action_type == KeyActionType::Press {
+                if event.is_ctrl {
+                    used_paste = true;
+                }
+            } else if used_paste {
                 break;
             }
         }

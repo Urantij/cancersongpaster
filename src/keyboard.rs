@@ -102,7 +102,6 @@ impl ListenControl {
                 return;
             }
             container.is_pressed = true;
-            return;
         } else if event.event_type == rdev::EventType::KeyRelease(key) {
             if !container.is_pressed {
                 return;
