@@ -83,11 +83,9 @@ fn main() -> Result<(), Box<dyn Error>> {
 
     let single_instance = Arc::new(Mutex::new(Some(single_instance)));
 
-    let (sender, receiver) = mpsc::channel();
-
     // На Press плохо работает, иногда просто не вставляет строку в буфер обмена.
     // Да и если подумать... оно и должно на релизе срабатывать, на пресс же сам пейст срабатывает, ептыть
-    let control = keyboard::ListenControl::create(sender, Key::KeyV, true, KeyActionType::Release);
+    let control = keyboard::ListenControl::create(Key::KeyV);
 
     let last_activity = Arc::new(Mutex::new(std::time::Instant::now()));
 
@@ -132,7 +130,12 @@ fn main() -> Result<(), Box<dyn Error>> {
 
         clipboard::paste_clipboard(line)?;
 
-        receiver.recv()?;
+        loop {
+            let event = control.receiver.recv()?;
+            if event.action_type == KeyActionType::Release && event.is_ctrl {
+                break;
+            }
+        }
 
         *last_activity.lock().unwrap() = std::time::Instant::now();
     }
