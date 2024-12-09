@@ -15,7 +15,11 @@ pub enum SelectionError {
 }
 
 // TODO вот бы разобраться как брать любую итер инто коллекцию, но 10 миллиардов вариантов в гугле все не подошли.
-pub fn get_selection<'a>(options: &'a Vec<&str>, lines: usize) -> Result<&'a str, SelectionError> {
+pub fn get_selection<'a>(
+    options: &'a Vec<&str>,
+    lines: usize,
+    lower_case: bool,
+) -> Result<&'a str, SelectionError> {
     let mut command = Command::new("dmenu")
         .arg("-l")
         .arg(lines.to_string())
@@ -31,6 +35,11 @@ pub fn get_selection<'a>(options: &'a Vec<&str>, lines: usize) -> Result<&'a str
         let mut in_pipe = command.stdin.take().unwrap();
 
         while let Some(line) = iter.next() {
+            let line: &str = match lower_case {
+                true => &line.to_lowercase(),
+                false => line,
+            };
+
             in_pipe
                 .write_all(line.as_bytes())
                 .map_err(|err| SelectionError::BadExecution { inner: err })?;
@@ -56,7 +65,13 @@ pub fn get_selection<'a>(options: &'a Vec<&str>, lines: usize) -> Result<&'a str
         .map_err(|_| SelectionError::BadInput)?
         .trim_end();
 
-    match options.iter().find(|&&option| option == output) {
+    match options.iter().find(|&&option| {
+        let option: &str = match lower_case {
+            true => &option.to_lowercase(),
+            false => option,
+        };
+        option == output
+    }) {
         Some(out) => Ok(&out),
         None => Err(SelectionError::BadInput),
     }

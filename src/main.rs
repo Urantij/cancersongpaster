@@ -21,6 +21,7 @@ const TIMEOUT_IN_SECONDS: u64 = 7;
 const DEFAULT_SELECTION: bool = false;
 const PASTE_WAIT_TIME_IN_MILLIS: u64 = 50;
 const DEFAULT_NOTIFY: bool = true;
+const DEFAULT_LOWER_CASE: bool = true;
 const NOTIFY_TIMEOUT_IN_MILLIS: u64 = 2000;
 
 #[derive(Parser, Debug)]
@@ -38,6 +39,9 @@ struct Args {
     /// Notify when program ends
     #[arg(short, default_value_t = DEFAULT_NOTIFY )]
     notify: bool,
+    /// Lowercase options for dmenu
+    #[arg(short, default_value_t = DEFAULT_LOWER_CASE )]
+    lower_case: bool,
 }
 
 fn main() -> Result<(), Box<dyn Error>> {
@@ -48,7 +52,9 @@ fn main() -> Result<(), Box<dyn Error>> {
     let songs = songs::get_songs(Path::new(&args.songs_path))?;
 
     let selection_type = match args.select {
-        true => SelectionType::DMenu,
+        true => SelectionType::DMenu {
+            lower_case: args.lower_case,
+        },
         false => SelectionType::Random,
     };
 

@@ -11,7 +11,7 @@ const MAX_FILE_SIZE: u64 = 1000 * 1000;
 
 pub enum SelectionType {
     Random,
-    DMenu,
+    DMenu { lower_case: bool },
 }
 
 #[derive(Error, Debug)]
@@ -62,8 +62,8 @@ pub fn select_song(
 ) -> Option<&CachedDirEntry> {
     match selection_type {
         SelectionType::Random => songs.choose(&mut rand::thread_rng()),
-        SelectionType::DMenu => {
-            let selection = get_song_selection(songs);
+        SelectionType::DMenu { lower_case } => {
+            let selection = get_song_selection(songs, lower_case);
 
             if let Ok(cached) = selection {
                 return Some(cached);
@@ -76,7 +76,10 @@ pub fn select_song(
     }
 }
 
-fn get_song_selection(songs: &Vec<CachedDirEntry>) -> Result<&CachedDirEntry, SelectionError> {
+fn get_song_selection(
+    songs: &Vec<CachedDirEntry>,
+    lower_case: bool,
+) -> Result<&CachedDirEntry, SelectionError> {
     let file_names: Vec<String> = songs
         .iter()
         .map(|entry| {
@@ -91,7 +94,7 @@ fn get_song_selection(songs: &Vec<CachedDirEntry>) -> Result<&CachedDirEntry, Se
     // TODO вот бы разобраться как не делать коллекцию ссылок на строки, чтобы положить строки
     let file_names2: Vec<&str> = file_names.iter().map(|a| a.as_str()).collect();
 
-    let selection = input::get_selection(&file_names2, 4);
+    let selection = input::get_selection(&file_names2, 4, lower_case);
 
     if let Ok(name) = selection {
         let cached = songs
