@@ -55,12 +55,7 @@ fn main() -> Result<(), Box<dyn Error>> {
     let song = songs::select_song(&songs, selection_type).unwrap();
     // TODO разобраться что такое еррор
 
-    {
-        let r = songs::check_song_file(song);
-        if r.is_err() {
-            return Err(Box::new(r.unwrap_err()));
-        }
-    }
+    songs::check_song_file(song)?;
 
     let lines = songs::read_song(song)?;
 
