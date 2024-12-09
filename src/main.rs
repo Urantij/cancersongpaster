@@ -9,6 +9,8 @@ use crate::keyboard::KeyActionType;
 use crate::notifications::send_notification;
 use crate::songs::SelectionType;
 use clap::{Parser, ValueHint};
+use rand::prelude::SliceRandom;
+use rand::Rng;
 use rdev::Key;
 use std::error::Error;
 use std::path::Path;
@@ -23,6 +25,17 @@ const PASTE_WAIT_TIME_IN_MILLIS: u64 = 50;
 const DEFAULT_NOTIFY: bool = true;
 const DEFAULT_LOWER_CASE: bool = true;
 const NOTIFY_TIMEOUT_IN_MILLIS: u64 = 2000;
+
+#[derive(clap::ValueEnum, Clone, Default, Debug)]
+enum PickType {
+    /// Copy all lines in order
+    #[default]
+    All,
+    /// Copy random line
+    Random,
+    // /// Copy only selected line
+    // Selected,
+}
 
 #[derive(Parser, Debug)]
 #[command(version, about, long_about = None)]
@@ -40,8 +53,11 @@ struct Args {
     #[arg(short, default_value_t = DEFAULT_NOTIFY )]
     notify: bool,
     /// Lowercase options for dmenu
-    #[arg(short, default_value_t = DEFAULT_LOWER_CASE )]
+    #[arg(long, default_value_t = DEFAULT_LOWER_CASE )]
     lower_case: bool,
+    /// How to copy lines
+    #[clap(long, default_value_t, value_enum)]
+    pick_type: PickType,
 }
 
 fn main() -> Result<(), Box<dyn Error>> {
@@ -63,7 +79,7 @@ fn main() -> Result<(), Box<dyn Error>> {
 
     songs::check_song_file(song)?;
 
-    let lines = songs::read_song(song)?;
+    let mut lines = songs::read_song(song)?;
 
     if lines.len() == 0 {
         panic!("Пустой вектор строк");
@@ -123,6 +139,13 @@ fn main() -> Result<(), Box<dyn Error>> {
             thread::sleep(Duration::from_millis(100));
         }
     });
+
+    // TODO разобраться, можно ли как то обойтись просто iter::once(line)
+    if matches!(args.pick_type, PickType::Random) {
+        let index = rand::thread_rng().gen_range(0..lines.len());
+        let line = lines.swap_remove(index);
+        lines = vec![line];
+    }
 
     let mut iter = lines.iter();
 
